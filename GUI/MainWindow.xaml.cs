@@ -23,6 +23,8 @@ public partial class MainWindow
     private readonly SKPaint _whiteFieldPaint = new() {Color = SKColors.LightGray};
     private readonly SKPaint _blackFieldPaint = new() {Color = SKColors.Gray};
     private readonly SKPaint _movesPaint = new() {Color = new SKColor(0, 180, 10, 128)};
+    private readonly SKPaint _attackedPaint = new() {Color = new SKColor(156, 62, 62, 128)};
+    private readonly SKPaint _selectedPaint = new() {Color = new SKColor(156, 156, 62, 128)};
 
     private readonly Board _board;
 
@@ -94,7 +96,10 @@ public partial class MainWindow
 
             var moves = _board.GetMoves(_selectedPiece);
             if (moves.Contains(_hoveredField))
-                _board.MovePiece(_selectedPiece.Position, _hoveredField.Position);
+            {
+                var move = new Move(_selectedPiece.Position, _hoveredField.Position);
+                _board.MovePiece(move);
+            }
 
             _selectedPiece = null;
         }
@@ -121,7 +126,7 @@ public partial class MainWindow
     {
         var canvas = e.Surface.Canvas;
 
-        var changes = _changeTracker.GetAll();
+        var changes = _changeTracker.GetAll().ToList();
         if (changes.Any())
         {
             HashSet<Position> movesPositions = new();
@@ -137,11 +142,22 @@ public partial class MainWindow
                 var field = _board[change];
                 DrawField(canvas, field);
 
+                // TODO Fix
+                if (movesPositions.Contains(change) || _selectedPiece is not null && change == _selectedPiece.Position)
+                {
+                    SKPaint paint;
+                    if (!field.IsOccupied)
+                        paint = _movesPaint;
+                    else if (field.Piece == _selectedPiece)
+                        paint = _selectedPaint;
+                    else
+                        paint = _attackedPaint;
+
+                    DrawHighlight(canvas, field, paint);
+                }
+
                 if (field.IsOccupied)
                     DrawPiece(canvas, field.Piece);
-
-                if (movesPositions.Contains(change))
-                    DrawMove(canvas, field);
 
                 DrawLabel(canvas, field);
             }
@@ -212,11 +228,11 @@ public partial class MainWindow
         richString.Paint(canvas, point);
     }
 
-    private void DrawMove(SKCanvas canvas, Field field)
+    private void DrawHighlight(SKCanvas canvas, Field field, SKPaint paint)
     {
         var x = (field.Position.Column - 1) * FieldSide;
         var y = (8 - field.Position.Row) * FieldSide;
-        canvas.DrawRect(x, y, FieldSide, FieldSide, _movesPaint);
+        canvas.DrawRect(x, y, FieldSide, FieldSide, paint);
     }
 
     private static string GetPieceStr(Piece piece)

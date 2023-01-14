@@ -12,32 +12,54 @@ public abstract class Piece
     public Field Field { get; set; }
     public PieceColor Color { get; }
 
-    public Piece(Field field, PieceColor color)
+    protected Piece(Field field, PieceColor color)
     {
         Field = field;
         Color = color;
     }
 
-    public bool CanMove(Position position)
+    public bool CanMove(Position newPosition)
     {
-        if (position == Position)
+        if (newPosition == Position)
             return false;
 
-        if (Field.Board[position].IsOccupied && Field.Board[position].Piece.Color == Color)
+        if (!GetEmptyBoardMoves().Contains(newPosition))
             return false;
 
-        // pinned, check
+        if (Field.Board[newPosition].IsOccupied && Field.Board[newPosition].Piece.Color == Color)
+            return false;
 
-        return CanMoveInternal(position);
+        var canMove = CanMoveInternal(newPosition);
+        if (!canMove)
+            return false;
+
+        var ifMove = Field.Board.IfMove(new Move(Position, newPosition));
+        var allyKing = Color == PieceColor.White ? ifMove.WhiteKing : ifMove.BlackKing;
+        return !allyKing.IsInCheck();
+
     }
 
     public bool CanAttack(Position position)
     {
+        if (!GetEmptyBoardAttacks().Contains(position))
+            return false;
+
         return CanAttackInternal(position);
     }
 
-    public abstract IEnumerable<Position> GetValidPositions();
-    protected abstract bool CanMoveInternal(Position positionMoveTo);
+    public static Piece Clone<T>(T oldPiece, Field newField) where T : Piece
+    {
+        return oldPiece switch
+        {
+            King => new King(newField, oldPiece.Color),
+            Bishop => new Bishop(newField, oldPiece.Color),
+            _ => throw new NotImplementedException()
+        };
+    }
+
+    public abstract HashSet<Position> GetEmptyBoardMoves();
+    public virtual HashSet<Position> GetEmptyBoardAttacks() => GetEmptyBoardMoves();
+    protected abstract bool CanMoveInternal(Position positionToMoveTo);
     protected abstract bool CanAttackInternal(Position attackedPosition);
 }
 
@@ -47,9 +69,9 @@ public class King : Piece
     {
     }
 
-    public override IEnumerable<Position> GetValidPositions()
+    public override HashSet<Position> GetEmptyBoardMoves()
     {
-        List<Position> positions = new(8);
+        HashSet<Position> positions = new(8);
         for (var rowOffset = -1; rowOffset <= 1; rowOffset++)
         {
             for (var columnOffset = -1; columnOffset <= 1; columnOffset++)
@@ -67,17 +89,19 @@ public class King : Piece
         return positions;
     }
 
-    protected override bool CanMoveInternal(Position positionMoveTo)
+    protected override bool CanMoveInternal(Position positionToMoveTo)
     {
-        var otherPieces = Field.Board.Pieces.Values.Where(p => p != this);
-        var enemyPieces = otherPieces.Where(p => p.Color != Color);
-        var allEnemiesAttacks = enemyPieces.SelectMany(ep => Field.Board.GetAttacked(ep));
-        return allEnemiesAttacks.All(f => f.Position != positionMoveTo);
+        var enemyPieces = Field.Board.Pieces.Values.Where(p => p.Color != Color);
+        var attackedFields = enemyPieces.SelectMany(ep => Field.Board.GetAttacked(ep));
+        return attackedFields.All(f => f.Position != positionToMoveTo);
     }
 
-    protected override bool CanAttackInternal(Position attackedPosition)
+    protected override bool CanAttackInternal(Position attackedPosition) => true;
+
+    public bool IsInCheck()
     {
-        return true;
+        var enemyPieces = Field.Board.Pieces.Values.Where(p => p.Color != Color);
+        return enemyPieces.Any(ep => ep.CanAttack(Position));
     }
 }
 
@@ -87,9 +111,9 @@ public class Bishop : Piece
     {
     }
 
-    public override IEnumerable<Position> GetValidPositions()
+    public override HashSet<Position> GetEmptyBoardMoves()
     {
-        List<Position> validPositions = new();
+        HashSet<Position> validPositions = new();
 
         var offsets = new[]
         {
@@ -114,10 +138,7 @@ public class Bishop : Piece
         return validPositions;
     }
 
-    protected override bool CanMoveInternal(Position positionMoveTo)
-    {
-        return CanAttackInternal(positionMoveTo);
-    }
+    protected override bool CanMoveInternal(Position positionToMoveTo) => CanAttackInternal(positionToMoveTo);
 
     protected override bool CanAttackInternal(Position attackedPosition)
     {

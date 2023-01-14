@@ -16,6 +16,18 @@ public readonly struct Offset
     }
 }
 
+public readonly struct Move
+{
+    public Position From { get; }
+    public Position To { get; }
+
+    public Move(Position from, Position to)
+    {
+        From = from;
+        To = to;
+    }
+}
+
 public readonly struct Position
 {
     public int Row { get; }
