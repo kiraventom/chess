@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Logic;
+using Logic.Pieces;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 using Topten.RichTextKit;
@@ -50,10 +51,27 @@ public partial class MainWindow
         timer.Tick += OnTick;
 
         _board = new Board();
-        _board.AddPiece(new King(_board["A1"], PieceColor.White));
-        _board.AddPiece(new King(_board["H8"], PieceColor.Black));
-        _board.AddPiece(new Bishop(_board["A2"], PieceColor.White));
-        _board.AddPiece(new Bishop(_board["G8"], PieceColor.Black));
+        _board.AddPiece(new King(_board["E1"], PieceColor.White));
+        _board.AddPiece(new Queen(_board["D1"], PieceColor.White));
+        _board.AddPiece(new Bishop(_board["C1"], PieceColor.White));
+        _board.AddPiece(new Bishop(_board["F1"], PieceColor.White));
+        _board.AddPiece(new Knight(_board["B1"], PieceColor.White));
+        _board.AddPiece(new Knight(_board["G1"], PieceColor.White));
+        _board.AddPiece(new Rook(_board["A1"], PieceColor.White));
+        _board.AddPiece(new Rook(_board["H1"], PieceColor.White));
+        for (int col = 1; col <= 8; col++)
+            _board.AddPiece(new Pawn(_board[new Position(2, col)], PieceColor.White));
+
+        _board.AddPiece(new King(_board["D8"], PieceColor.Black));
+        _board.AddPiece(new Queen(_board["E8"], PieceColor.Black));
+        _board.AddPiece(new Bishop(_board["C8"], PieceColor.Black));
+        _board.AddPiece(new Bishop(_board["F8"], PieceColor.Black));
+        _board.AddPiece(new Knight(_board["B8"], PieceColor.Black));
+        _board.AddPiece(new Knight(_board["G8"], PieceColor.Black));
+        _board.AddPiece(new Rook(_board["A8"], PieceColor.Black));
+        _board.AddPiece(new Rook(_board["H8"], PieceColor.Black));
+        for (int col = 1; col <= 8; col++)
+            _board.AddPiece(new Pawn(_board[new Position(7, col)], PieceColor.Black));
 
         Invalidate();
 
@@ -216,7 +234,7 @@ public partial class MainWindow
 
         var fontSize = MeasureFontSize(FieldSide, FieldSide, str);
 
-        richString.FontSize(fontSize);
+        richString.FontSize(fontSize).FontFamily("FreeSerif");
 
         richString.TextColor(color);
         if (piece.Color == PieceColor.White)
@@ -240,7 +258,11 @@ public partial class MainWindow
         return piece switch
         {
             King => "♚",
-            Bishop => "♝"
+            Queen => "♛",
+            Rook => "♜",
+            Bishop => "♝",
+            Knight => "♞",
+            Pawn => "♟",
         };
     }
 

@@ -1,3 +1,5 @@
+using Logic.Pieces;
+
 namespace Logic;
 
 public enum FieldColor

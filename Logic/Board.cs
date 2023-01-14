@@ -1,5 +1,4 @@
-using System.Net.NetworkInformation;
-using System.Reflection;
+using Logic.Pieces;
 
 namespace Logic;
 
@@ -86,12 +85,14 @@ public class Board
 
     public IEnumerable<Field> GetMoves(Piece piece)
     {
-        return piece.GetEmptyBoardMoves().Where(piece.CanMove).Select(p => _fields[p]);
+        return piece.GetEmptyBoardMoves().Where(piece.CanMove).
+            Concat(piece.GetEmptyBoardAttacks().Where(piece.CanEat))
+            .Select(p => _fields[p]);
     }
 
     public IEnumerable<Field> GetAttacked(Piece piece)
     {
-        return piece.GetEmptyBoardMoves().Where(piece.CanAttack).Select(p => _fields[p]);
+        return piece.GetEmptyBoardAttacks().Where(piece.IsAttacking).Select(p => _fields[p]);
     }
 
     public void MovePiece(Move move)

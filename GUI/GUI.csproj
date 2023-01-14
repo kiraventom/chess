@@ -15,4 +15,8 @@
       <ProjectReference Include="..\Logic\Logic.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Fonts\FreeSerif.ttf" />
+    </ItemGroup>
+
 </Project>
