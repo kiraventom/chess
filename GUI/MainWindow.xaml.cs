@@ -62,8 +62,8 @@ public partial class MainWindow
         for (int col = 1; col <= 8; col++)
             _board.AddPiece(new Pawn(_board[new Position(2, col)], PieceColor.White));
 
-        _board.AddPiece(new King(_board["D8"], PieceColor.Black));
-        _board.AddPiece(new Queen(_board["E8"], PieceColor.Black));
+        _board.AddPiece(new King(_board["E8"], PieceColor.Black));
+        _board.AddPiece(new Queen(_board["D8"], PieceColor.Black));
         _board.AddPiece(new Bishop(_board["C8"], PieceColor.Black));
         _board.AddPiece(new Bishop(_board["F8"], PieceColor.Black));
         _board.AddPiece(new Knight(_board["B8"], PieceColor.Black));
@@ -117,6 +117,15 @@ public partial class MainWindow
             {
                 var move = new Move(_selectedPiece.Position, _hoveredField.Position);
                 _board.MovePiece(move);
+
+                // TODO Temp
+                if (_selectedPiece is King && Math.Abs(move.To.Column - move.From.Column) > 1)
+                {
+                    for (int col = 1; col <= 8; col++)
+                    {
+                        _changeTracker.Register(new Position(_selectedPiece.Position.Row, col));
+                    }
+                }
             }
 
             _selectedPiece = null;
@@ -201,7 +210,7 @@ public partial class MainWindow
     {
         var fontSize = MeasureFontSize(FieldSide, FieldSide / 5, "A");
 
-        if (field.Position.Column == 8)
+        if (field.Position.Column == 1)
         {
             var richString = new RichString();
             richString.FontSize(fontSize).Add(field.Position.Row.ToString());

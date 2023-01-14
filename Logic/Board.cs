@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Logic.Pieces;
 
 namespace Logic;
@@ -57,9 +58,6 @@ public class Board
 
     public Board IfMove(Move move)
     {
-        if (!IsValidMove(move))
-            throw new InvalidOperationException();
-
         var copy = new Board(this);
         copy.MovePiece(move);
         return copy;
@@ -85,9 +83,10 @@ public class Board
 
     public IEnumerable<Field> GetMoves(Piece piece)
     {
-        return piece.GetEmptyBoardMoves().Where(piece.CanMove).
-            Concat(piece.GetEmptyBoardAttacks().Where(piece.CanEat))
-            .Select(p => _fields[p]);
+        var moves = piece.GetEmptyBoardMoves().Where(piece.CanMove);
+        var attacks = piece.GetEmptyBoardAttacks().Where(piece.CanEat);
+        var combined = new HashSet<Position>(moves.Concat(attacks));
+        return combined.Select(p => _fields[p]);
     }
 
     public IEnumerable<Field> GetAttacked(Piece piece)
@@ -109,9 +108,26 @@ public class Board
 
         _pieces.Add(newField, piece);
         piece.Field = newField;
+
+        if (piece is King king)
+        {
+            king.DidMove = true;
+
+            // castle
+            var colOffset = move.To.Column - move.From.Column;
+            if (Math.Abs(colOffset) > 1)
+            {
+                if (colOffset < 0)
+                    MovePiece(new Move($"A{king.Position.Row}", $"D{king.Position.Row}"));
+                else
+                    MovePiece(new Move($"H{king.Position.Row}", $"F{king.Position.Row}"));
+            }
+        }
+        else if (piece is Rook rook)
+            rook.DidMove = true;
     }
 
-    private bool IsValidMove(Move move)
+    private static bool IsValidMove(Move move)
     {
         return move.From.IsValid && move.To.IsValid;
     }

@@ -2,6 +2,8 @@ namespace Logic.Pieces;
 
 public class Rook : Piece
 {
+    public bool DidMove { get; set; }
+
     public Rook(Field field, PieceColor color) : base(field, color)
     {
     }
