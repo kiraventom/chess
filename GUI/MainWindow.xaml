@@ -5,11 +5,34 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GUI"
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
+        xmlns:logic="clr-namespace:Logic;assembly=Logic"
         mc:Ignorable="d"
-        Title="MainWindow" Height="700" Width="650">
+        d:DataContext="{d:DesignInstance {x:Type logic:Game}}"
+        Title="MainWindow" Height="700" Width="1000">
     <Grid>
-        <skia:SKElement x:Name="MainView">
-
-        </skia:SKElement>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="300"/>
+        </Grid.ColumnDefinitions>
+        <skia:SKElement
+            Grid.Column="0"
+            x:Name="MainView" />
+        <StackPanel
+            Grid.Column="1"
+            Orientation="Vertical">
+            <Button
+                Content="Restart"
+                Command="{Binding RestartCommand}" />
+            <TextBlock Text="{Binding GameState}" />
+            <TextBlock Text="{Binding CurrentTurn}" />
+            <ListBox
+                ItemsSource="{Binding GameLog.Log}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type logic:GameLogTurn}">
+                        <TextBlock Text="{Binding AsString}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
     </Grid>
 </Window>

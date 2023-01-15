@@ -2,7 +2,7 @@ namespace Logic.Pieces;
 
 public class Bishop : Piece
 {
-    public Bishop(Field field, PieceColor color) : base(field, color)
+    internal Bishop(Field field, PieceColor color) : base(field, color)
     {
     }
 

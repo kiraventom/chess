@@ -12,6 +12,8 @@ using TextAlignment = Topten.RichTextKit.TextAlignment;
 
 namespace GUI;
 
+// TODO Get info on "what to update" from game
+
 public partial class MainWindow
 {
     private const float FPS = 15;
@@ -27,12 +29,12 @@ public partial class MainWindow
     private readonly SKPaint _attackedPaint = new() {Color = new SKColor(156, 62, 62, 128)};
     private readonly SKPaint _selectedPaint = new() {Color = new SKColor(156, 156, 62, 128)};
 
-    private readonly Board _board;
+    private readonly Game _game;
+    private Board Board => _game.Board;
 
     private readonly ChangeTracker _changeTracker = new();
 
-    private Field _hoveredField;
-    private Piece _selectedPiece;
+    private Position _hoveredPosition;
 
     public MainWindow()
     {
@@ -50,28 +52,8 @@ public partial class MainWindow
 
         timer.Tick += OnTick;
 
-        _board = new Board();
-        _board.AddPiece(new King(_board["E1"], PieceColor.White));
-        _board.AddPiece(new Queen(_board["D1"], PieceColor.White));
-        _board.AddPiece(new Bishop(_board["C1"], PieceColor.White));
-        _board.AddPiece(new Bishop(_board["F1"], PieceColor.White));
-        _board.AddPiece(new Knight(_board["B1"], PieceColor.White));
-        _board.AddPiece(new Knight(_board["G1"], PieceColor.White));
-        _board.AddPiece(new Rook(_board["A1"], PieceColor.White));
-        _board.AddPiece(new Rook(_board["H1"], PieceColor.White));
-        for (int col = 1; col <= 8; col++)
-            _board.AddPiece(new Pawn(_board[new Position(2, col)], PieceColor.White));
-
-        _board.AddPiece(new King(_board["E8"], PieceColor.Black));
-        _board.AddPiece(new Queen(_board["D8"], PieceColor.Black));
-        _board.AddPiece(new Bishop(_board["C8"], PieceColor.Black));
-        _board.AddPiece(new Bishop(_board["F8"], PieceColor.Black));
-        _board.AddPiece(new Knight(_board["B8"], PieceColor.Black));
-        _board.AddPiece(new Knight(_board["G8"], PieceColor.Black));
-        _board.AddPiece(new Rook(_board["A8"], PieceColor.Black));
-        _board.AddPiece(new Rook(_board["H8"], PieceColor.Black));
-        for (int col = 1; col <= 8; col++)
-            _board.AddPiece(new Pawn(_board[new Position(7, col)], PieceColor.Black));
+        _game = new Game();
+        DataContext = _game;
 
         Invalidate();
 
@@ -90,45 +72,47 @@ public partial class MainWindow
         MainView.InvalidateVisual();
     }
 
+    // TODO Refactor
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (_hoveredField is null)
+        if (!_hoveredPosition.IsValid)
             return;
 
-        if (_selectedPiece is null)
+        HashSet<Position> moves;
+        if (_game.SelectedPiece is not null && (moves = Board.GetMoves(_game.SelectedPiece)).Contains(_hoveredPosition))
         {
-            if (!_hoveredField.IsOccupied)
-                return;
+            _changeTracker.Register(_game.SelectedPiece.Position);
+            foreach (var pos in moves)
+                _changeTracker.Register(pos);
 
-            _changeTracker.Register(_hoveredField.Position);
-            foreach (var move in _board.GetMoves(_hoveredField.Piece))
-                _changeTracker.Register(move.Position);
+            var move = new Move(_game.SelectedPiece.Position, _hoveredPosition);
+            _game.MakeMove(move);
 
-            _selectedPiece = _hoveredField.Piece;
+            // TODO Temp
+            if (_game.SelectedPiece is King king && Math.Abs(move.To.Column - move.From.Column) > 1)
+            {
+                for (int col = 1; col <= 8; col++)
+                {
+                    _changeTracker.Register(new Position(king.Position.Row, col));
+                }
+            }
         }
         else
         {
-            _changeTracker.Register(_selectedPiece.Position);
-            foreach (var move in _board.GetMoves(_selectedPiece))
-                _changeTracker.Register(move.Position);
-
-            var moves = _board.GetMoves(_selectedPiece);
-            if (moves.Contains(_hoveredField))
+            if (_game.SelectedPiece is not null)
             {
-                var move = new Move(_selectedPiece.Position, _hoveredField.Position);
-                _board.MovePiece(move);
-
-                // TODO Temp
-                if (_selectedPiece is King && Math.Abs(move.To.Column - move.From.Column) > 1)
-                {
-                    for (int col = 1; col <= 8; col++)
-                    {
-                        _changeTracker.Register(new Position(_selectedPiece.Position.Row, col));
-                    }
-                }
+                _changeTracker.Register(_game.SelectedPiece.Position);
+                foreach (var pos in Board.GetMoves(_game.SelectedPiece))
+                    _changeTracker.Register(pos);
             }
 
-            _selectedPiece = null;
+            bool didSelect = _game.TrySelectPiece(_hoveredPosition);
+            if (didSelect)
+            {
+                _changeTracker.Register(_hoveredPosition);
+                foreach (var move in Board.GetMoves(_game.SelectedPiece))
+                    _changeTracker.Register(move);
+            }
         }
     }
 
@@ -138,15 +122,7 @@ public partial class MainWindow
         var col = (int) Math.Floor(point.X / FieldSide) + 1;
         var row = 8 - (int) Math.Floor(point.Y / FieldSide);
 
-        if (new Position(row, col).IsValid)
-        {
-            var field = _board[new Position(row, col)];
-            _hoveredField = field;
-        }
-        else
-        {
-            _hoveredField = null;
-        }
+        _hoveredPosition = new Position(row, col);
     }
 
     private void OnPaint(object sender, SKPaintSurfaceEventArgs e)
@@ -157,25 +133,25 @@ public partial class MainWindow
         if (changes.Any())
         {
             HashSet<Position> movesPositions = new();
-            if (_selectedPiece is not null)
+            if (_game.SelectedPiece is not null)
             {
-                var moves = _board.GetMoves(_selectedPiece);
+                var moves = Board.GetMoves(_game.SelectedPiece);
                 foreach (var move in moves)
-                    movesPositions.Add(move.Position);
+                    movesPositions.Add(move);
             }
 
             foreach (var change in changes)
             {
-                var field = _board[change];
+                var field = Board[change];
                 DrawField(canvas, field);
 
                 // TODO Fix
-                if (movesPositions.Contains(change) || _selectedPiece is not null && change == _selectedPiece.Position)
+                if (movesPositions.Contains(change) || _game.SelectedPiece is not null && change == _game.SelectedPiece.Position)
                 {
                     SKPaint paint;
                     if (!field.IsOccupied)
                         paint = _movesPaint;
-                    else if (field.Piece == _selectedPiece)
+                    else if (field.Piece == _game.SelectedPiece)
                         paint = _selectedPaint;
                     else
                         paint = _attackedPaint;
@@ -222,7 +198,7 @@ public partial class MainWindow
         if (field.Position.Row == 1)
         {
             var richString = new RichString();
-            richString.FontSize(fontSize).Add(GetColumnStr(field.Position.Column));
+            richString.FontSize(fontSize).Add(field.Position.ToString()[0].ToString());
             var x = field.Position.Column * FieldSide - richString.MeasuredWidth;
             var y = 8 * FieldSide - richString.MeasuredHeight;
             richString.Paint(canvas, new SKPoint(x, y));
@@ -273,11 +249,6 @@ public partial class MainWindow
             Knight => "♞",
             Pawn => "♟",
         };
-    }
-
-    private static string GetColumnStr(int col)
-    {
-        return new string((char) ('A' - 1 + col), 1);
     }
 
     private static int MeasureFontSize(float width, float height, string text)

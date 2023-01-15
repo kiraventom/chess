@@ -4,7 +4,7 @@ public class Pawn : Piece
 {
     private int StartRow => Color == PieceColor.White ? 2 : 7;
 
-    public Pawn(Field field, PieceColor color) : base(field, color)
+    internal Pawn(Field field, PieceColor color) : base(field, color)
     {
     }
 
@@ -35,7 +35,7 @@ public class Pawn : Piece
         return validAttacks;
     }
 
-    protected override bool CanEatInternal(Position positionToEatAt) => true;
+    protected override bool CanTakeInternal(Position positionToEatAt) => true;
     protected override bool CanMoveInternal(Position positionToMoveTo) => true;
     protected override bool IsAttackingInternal(Position attackedPosition) => true;
 }

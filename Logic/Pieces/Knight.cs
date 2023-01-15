@@ -2,7 +2,7 @@ namespace Logic.Pieces;
 
 public class Knight : Piece
 {
-    public Knight(Field field, PieceColor color) : base(field, color)
+    internal Knight(Field field, PieceColor color) : base(field, color)
     {
     }
 

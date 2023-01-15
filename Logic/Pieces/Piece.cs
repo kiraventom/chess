@@ -32,13 +32,13 @@ public abstract class Piece
         return !allyKing.IsInCheck();
     }
 
-    public bool CanEat(Position newPosition)
+    public bool CanTake(Position newPosition)
     {
         // TODO override for en passant
         if (!Field.Board[newPosition].IsOccupied || Field.Board[newPosition].Piece.Color == Color)
             return false;
 
-        var canEat = CanEatInternal(newPosition);
+        var canEat = CanTakeInternal(newPosition);
         if (!canEat)
             return false;
 
@@ -73,5 +73,5 @@ public abstract class Piece
     public virtual HashSet<Position> GetEmptyBoardAttacks() => GetEmptyBoardMoves();
     protected abstract bool CanMoveInternal(Position positionToMoveTo);
     protected abstract bool IsAttackingInternal(Position attackedPosition);
-    protected virtual bool CanEatInternal(Position positionToEatAt) => CanMoveInternal(positionToEatAt);
+    protected virtual bool CanTakeInternal(Position positionToEatAt) => CanMoveInternal(positionToEatAt);
 }

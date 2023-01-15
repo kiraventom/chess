@@ -15,7 +15,7 @@ public class Field
     public Piece Piece => Board.Pieces.ContainsKey(this) ? Board.Pieces[this] : null;
     public bool IsOccupied => Piece is not null;
 
-    public Field(Board board, Position position)
+    internal Field(Board board, Position position)
     {
         Board = board;
         Position = position;

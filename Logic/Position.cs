@@ -9,7 +9,7 @@ public readonly struct Offset
 
     public bool IsZero => RowOffset == 0 && ColumnOffset == 0;
 
-    public Offset(int rowOffset, int columnOffset)
+    internal Offset(int rowOffset, int columnOffset)
     {
         RowOffset = rowOffset;
         ColumnOffset = columnOffset;
@@ -60,8 +60,13 @@ public readonly struct Position
             throw new InvalidOperationException();
 
         var columnChar = str[0];
-        var column = columnChar - 'A' + 1;
+        var column =  char.IsUpper(columnChar) ? columnChar - 'A' + 1 : columnChar - 'a' + 1;
         var row = int.Parse(str[1].ToString());
         return new Position(row, column);
+    }
+
+    public override string ToString()
+    {
+        return $"{(char) ('a' - 1 + Column)}{Row}";
     }
 }

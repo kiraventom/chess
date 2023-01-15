@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Logic.Pieces;
 
 namespace Logic;
@@ -15,7 +14,7 @@ public class Board
     public King WhiteKing { get; private set; }
     public King BlackKing { get; private set; }
 
-    public Board()
+    internal Board()
     {
         for (int row = 1; row <= 8; row++)
         {
@@ -35,7 +34,7 @@ public class Board
         }
     }
 
-    public void AddPiece(Piece piece)
+    internal void AddPiece(Piece piece)
     {
         _pieces.Add(piece.Field, piece);
 
@@ -56,14 +55,14 @@ public class Board
         }
     }
 
-    public Board IfMove(Move move)
+    internal Board IfMove(Move move)
     {
         var copy = new Board(this);
         copy.MovePiece(move);
         return copy;
     }
 
-    public Board IfAdd(Piece newPiece)
+    internal Board IfAdd(Piece newPiece)
     {
         var copy = new Board(this);
         var pieceCopy = Piece.Clone(newPiece, copy[newPiece.Position]);
@@ -71,7 +70,7 @@ public class Board
         return copy;
     }
 
-    public Board IfRemove(Piece oldPiece)
+    internal Board IfRemove(Piece oldPiece)
     {
         if (_fields[oldPiece.Position].Piece != oldPiece)
             throw new InvalidOperationException();
@@ -81,12 +80,11 @@ public class Board
         return copy;
     }
 
-    public IEnumerable<Field> GetMoves(Piece piece)
+    public static HashSet<Position> GetMoves(Piece piece)
     {
         var moves = piece.GetEmptyBoardMoves().Where(piece.CanMove);
-        var attacks = piece.GetEmptyBoardAttacks().Where(piece.CanEat);
-        var combined = new HashSet<Position>(moves.Concat(attacks));
-        return combined.Select(p => _fields[p]);
+        var attacks = piece.GetEmptyBoardAttacks().Where(piece.CanTake);
+        return new HashSet<Position>(moves.Concat(attacks));
     }
 
     public IEnumerable<Field> GetAttacked(Piece piece)
@@ -94,7 +92,7 @@ public class Board
         return piece.GetEmptyBoardAttacks().Where(piece.IsAttacking).Select(p => _fields[p]);
     }
 
-    public void MovePiece(Move move)
+    internal void MovePiece(Move move)
     {
         if (!IsValidMove(move))
             throw new InvalidOperationException();
@@ -108,6 +106,8 @@ public class Board
 
         _pieces.Add(newField, piece);
         piece.Field = newField;
+
+        // TODO Pawn promotion
 
         if (piece is King king)
         {

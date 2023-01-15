@@ -7,7 +7,7 @@ public class King : Piece
 
     public bool DidMove { get; set; }
 
-    public King(Field field, PieceColor color) : base(field, color)
+    internal King(Field field, PieceColor color) : base(field, color)
     {
     }
 
