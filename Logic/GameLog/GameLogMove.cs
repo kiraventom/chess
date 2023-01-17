@@ -11,8 +11,11 @@ public class GameLogMove
     public bool IsCheck { get; }
     public bool IsMate { get; }
     public IEnumerable<Position> Extra { get; }
+    public bool IsPromotion { get; }
+    public PromotionPiece? PromotionPiece { get; }
 
-    public GameLogMove(Move move, Piece piece, bool isTake, bool isCheck, bool isMate, bool isCastle, IEnumerable<Position> extra)
+    public GameLogMove(Move move, Piece piece, bool isTake, bool isCheck, bool isMate, bool isCastle,
+        IEnumerable<Position> extra, PromotionPiece? promotionPiece)
     {
         Move = move;
         Piece = piece;
@@ -25,5 +28,7 @@ public class GameLogMove
         IsMate = isMate;
         IsCastle = isCastle;
         Extra = extra;
+        IsPromotion = promotionPiece is not null;
+        PromotionPiece = promotionPiece;
     }
 }

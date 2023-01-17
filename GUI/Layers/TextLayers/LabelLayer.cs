@@ -17,11 +17,9 @@ public class LabelLayer : TextLayer
         _type = type;
     }
 
-    protected override void PaintInternal(SKCanvas canvas, float renderLeft, float renderTop, float renderRight, float renderBottom)
+    protected override void PaintInternal(SKCanvas canvas, SKRect renderRect)
     {
-        var width = renderRight - renderLeft;
-        var height = renderBottom - renderTop;
-        var fontSize = MeasureFontSize(width, height / 5, "A");
+        var fontSize = MeasureFontSize(renderRect.Width, renderRect.Height / 5, "A");
 
         switch (_type)
         {
@@ -29,7 +27,7 @@ public class LabelLayer : TextLayer
             {
                 var richString = new RichString();
                 richString.FontSize(fontSize).Add(_labelString[1].ToString());
-                richString.Paint(canvas, new SKPoint(renderLeft, renderTop));
+                richString.Paint(canvas, renderRect.Location);
                 break;
             }
 
@@ -37,8 +35,8 @@ public class LabelLayer : TextLayer
             {
                 var richString = new RichString();
                 richString.FontSize(fontSize).Add(_labelString[0].ToString().ToUpper());
-                var x = renderRight - richString.MeasuredWidth;
-                var y = renderBottom - richString.MeasuredHeight;
+                var x = renderRect.Right - richString.MeasuredWidth;
+                var y = renderRect.Bottom - richString.MeasuredHeight;
                 richString.Paint(canvas, new SKPoint(x, y));
                 break;
             }

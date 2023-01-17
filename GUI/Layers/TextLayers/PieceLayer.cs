@@ -1,4 +1,5 @@
-﻿using Logic.Pieces;
+﻿using Logic;
+using Logic.Pieces;
 using SkiaSharp;
 using Topten.RichTextKit;
 
@@ -15,34 +16,37 @@ public class PieceLayer : TextLayer
         _pieceColor = piece.Color;
     }
 
-    protected override void PaintInternal(SKCanvas canvas, float renderLeft, float renderTop, float renderRight, float renderBottom)
+    public PieceLayer(PromotionPiece piece, PieceColor color, Position position) : base(position)
+    {
+        _pieceString = GetPieceStr(piece);
+        _pieceColor = color;
+    }
+
+    protected override void PaintInternal(SKCanvas canvas, SKRect renderRect)
     {
         var color = _pieceColor == PieceColor.White ? SKColors.White : SKColors.Black;
 
-        var width = renderRight - renderLeft;
-        var height = renderBottom - renderTop;
         RichString richString = new()
         {
-            MaxWidth = width,
-            MaxHeight = height,
+            MaxWidth = renderRect.Width,
+            MaxHeight = renderRect.Height,
             DefaultAlignment = TextAlignment.Center
         };
 
-        var fontSize = MeasureFontSize(width, height, _pieceString);
+        var fontSize = MeasureFontSize(renderRect.Width, renderRect.Height, _pieceString);
 
         richString.FontSize(fontSize).FontFamily("FreeSerif");
 
         richString.TextColor(color);
         if (_pieceColor == PieceColor.White)
-            richString.HaloWidth(width / 20).HaloColor(SKColors.Black);
+            richString.HaloWidth(renderRect.Width / 20).HaloColor(SKColors.Black);
 
         richString.Add(_pieceString);
 
-        var point = new SKPoint(renderLeft, renderTop);
-        richString.Paint(canvas, point);
+        richString.Paint(canvas, renderRect.Location);
     }
 
-    private static string GetPieceStr(Logic.Pieces.Piece piece)
+    private static string GetPieceStr(Piece piece)
     {
         return piece switch
         {
@@ -52,6 +56,17 @@ public class PieceLayer : TextLayer
             Bishop => "♝",
             Knight => "♞",
             Pawn => "♟",
+        };
+    }
+
+    private static string GetPieceStr(PromotionPiece piece)
+    {
+        return piece switch
+        {
+            PromotionPiece.Queen => "♛",
+            PromotionPiece.Rook => "♜",
+            PromotionPiece.Bishop => "♝",
+            PromotionPiece.Knight => "♞",
         };
     }
 }

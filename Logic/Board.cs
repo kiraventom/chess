@@ -1,9 +1,13 @@
 using Logic.Pieces;
+// ReSharper disable ConvertIfStatementToSwitchStatement
 
 namespace Logic;
 
+public delegate Task<PromotionPiece> PromotionCallback(Pawn pawn);
+
 public class Board
 {
+    private readonly PromotionCallback _promotionCallback;
     private readonly Dictionary<Field, Piece> _pieces = new();
     private readonly Dictionary<Position, Field> _fields = new();
 
@@ -14,14 +18,16 @@ public class Board
     public King WhiteKing { get; private set; }
     public King BlackKing { get; private set; }
 
-    internal Board()
+    internal Board(PromotionCallback promotionCallback)
     {
+        _promotionCallback = promotionCallback;
+
         for (var row = 1; row <= 8; row++)
         for (var col = 1; col <= 8; col++)
             _fields[new Position(row, col)] = new Field(this, new Position(row, col));
     }
 
-    private Board(Board board) : this()
+    private Board(Board board) : this(Game.DefaultPromotionCallback)
     {
         foreach (var (field, piece) in board.Pieces)
         {
@@ -66,11 +72,11 @@ public class Board
     internal Board IfMove(Move move)
     {
         var copy = new Board(this);
-        copy.MovePiece(move);
+        copy.MovePiece(move).ConfigureAwait(false).GetAwaiter().GetResult();
         return copy;
     }
 
-    internal void MovePiece(Move move)
+    internal async Task MovePiece(Move move)
     {
         if (!IsValidMove(move))
             throw new InvalidOperationException();
@@ -86,7 +92,8 @@ public class Board
         _pieces.Add(newField, piece);
         piece.Field = newField;
 
-        // TODO Pawn promotion
+        if (piece is Pawn pawn && move.To.Row is 1 or 8)
+            await Promote(pawn);
 
         if (piece is ICastlePiece castlePiece)
             castlePiece.DidMove = true;
@@ -98,7 +105,25 @@ public class Board
     private void Castle(int row, CastleDirection direction)
     {
         var rookMove = Game.GetRookCastleMove(direction, row);
-        MovePiece(rookMove);
+        MovePiece(rookMove).ConfigureAwait(false).GetAwaiter().GetResult();
+    }
+
+    private async Task Promote(Pawn pawn)
+    {
+        var field = _fields[pawn.Position];
+        _pieces.Remove(field);
+
+        var promotionPiece = await _promotionCallback(pawn);
+        Piece piece = promotionPiece switch
+        {
+            PromotionPiece.Knight => new Knight(field, pawn.Color),
+            PromotionPiece.Bishop => new Bishop(field, pawn.Color),
+            PromotionPiece.Rook => new Rook(field, pawn.Color) {DidMove = true},
+            PromotionPiece.Queen => new Queen(field, pawn.Color),
+            _ => throw new InvalidOperationException()
+        };
+
+        _pieces.Add(field, piece);
     }
 
     private static bool IsValidMove(Move move) => move.From.IsValid && move.To.IsValid;

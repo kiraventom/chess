@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Logic;
 using Logic.GameLog;
 using Logic.Pieces;
 
@@ -66,6 +67,20 @@ public class GameLogTurnReader : BaseNotifier
                 sb.Append(move.Piece is Pawn ? move.Move.From.ToString()[0] : 'x');
 
             sb.Append(move.Piece is Pawn && move.IsTake ? move.Move.To.ToString()[0] : move.Move.To.ToString());
+
+            if (move.IsPromotion)
+            {
+                var promotionPieceStr = move.PromotionPiece.Value switch
+                {
+                    PromotionPiece.Queen => "Q",
+                    PromotionPiece.Bishop => "B",
+                    PromotionPiece.Knight => "N",
+                    PromotionPiece.Rook => "R",
+                };
+
+                sb.Append(promotionPieceStr);
+            }
+
         }
 
         if (move.IsMate)

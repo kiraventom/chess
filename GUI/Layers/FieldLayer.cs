@@ -14,17 +14,9 @@ public class FieldLayer : RectangleLayer
         _color = color;
     }
 
-    protected override void PaintInternal(SKCanvas canvas, float renderLeft, float renderTop, float renderRight, float renderBottom)
+    protected override void PaintInternal(SKCanvas canvas, SKRect renderRect)
     {
         var paint = _color == FieldColor.White ? _whiteFieldPaint : _blackFieldPaint;
-        var rect = new SKRect
-        {
-            Left = renderLeft,
-            Top = renderTop,
-            Right = renderRight,
-            Bottom = renderBottom,
-        };
-
-        canvas.DrawRect(rect, paint);
+        canvas.DrawRect(renderRect, paint);
     }
 }

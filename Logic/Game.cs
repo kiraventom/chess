@@ -16,6 +16,14 @@ public enum CastleDirection
     Long
 }
 
+public enum PromotionPiece
+{
+    Queen,
+    Rook,
+    Bishop,
+    Knight,
+}
+
 public class Game
 {
     public Board Board { get; }
@@ -25,9 +33,9 @@ public class Game
 
     public GameLog.GameLog GameLog { get; }
 
-    public Game()
+    public Game(PromotionCallback promotionCallback)
     {
-        Board = new Board();
+        Board = new Board(promotionCallback);
         AddDefaultPieces(Board);
 
         CurrentTurn = PieceColor.White;
@@ -35,7 +43,7 @@ public class Game
         GameLog = new GameLog.GameLog();
     }
 
-    public void MakeMove(Move move)
+    public async Task MakeMove(Move move)
     {
         if (GameState != GameState.WaitingForMove)
             throw new InvalidOperationException();
@@ -43,7 +51,7 @@ public class Game
         List<Position> extraPositions = new();
 
         var takenPiece = Board[move.To].Piece;
-        Board.MovePiece(move);
+        await Board.MovePiece(move);
 
         CurrentTurn = CurrentTurn == PieceColor.White ? PieceColor.Black : PieceColor.White;
         GameState = UpdateState();
@@ -72,7 +80,20 @@ public class Game
 
         var isMate = GameState is GameState.WhiteWin or GameState.BlackWin;
 
-        GameLog.AddMove(movedPiece, move, isTake, isCheck, isMate, isCastle, extraPositions);
+        PromotionPiece? promotionPiece = null;
+        var isPromotion = movedPiece != Board[move.To].Piece;
+        if (isPromotion)
+        {
+            promotionPiece = Board[move.To].Piece switch
+            {
+                Queen => PromotionPiece.Queen,
+                Rook => PromotionPiece.Rook,
+                Bishop => PromotionPiece.Bishop,
+                Knight => PromotionPiece.Knight
+            };
+        }
+
+        GameLog.AddMove(movedPiece, move, isTake, isCheck, isMate, isCastle, extraPositions, promotionPiece);
     }
 
     internal static CastleDirection GetCastleDirection(Move kingMove)
@@ -89,6 +110,8 @@ public class Game
             _ => throw new InvalidOperationException()
         };
     }
+
+    internal static Task<PromotionPiece> DefaultPromotionCallback(Pawn pawn) => Task.FromResult(PromotionPiece.Queen);
 
     private GameState UpdateState()
     {

@@ -7,7 +7,7 @@ public readonly struct Offset
 
     public bool IsZero => RowOffset == 0 && ColumnOffset == 0;
 
-    internal Offset(int rowOffset, int columnOffset)
+    public Offset(int rowOffset, int columnOffset)
     {
         RowOffset = rowOffset;
         ColumnOffset = columnOffset;

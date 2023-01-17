@@ -44,15 +44,14 @@ public partial class MainWindow
         _resizeEndHelper = new ResizeEndHelper(MainView);
         _resizeEndHelper.ResizeEnd += ViewModel.OnForceRedraw;
 
-        var timer = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher.CurrentDispatcher)
+        var timer = new DispatcherTimer(DispatcherPriority.Render, Dispatcher.CurrentDispatcher)
         {
-            Interval = TimeSpan.FromSeconds(1.0 / Fps),
-            IsEnabled = false
+            Interval = TimeSpan.FromSeconds(1.0 / Fps)
         };
 
         timer.Tick += OnTick;
 
-        ViewModel.OnForceRedraw();
+        ViewModel.Init();
         timer.Start();
     }
 
@@ -62,10 +61,10 @@ public partial class MainWindow
         MainView.InvalidateVisual();
     }
 
-    private void OnMouseDown(object sender, MouseButtonEventArgs e)
+    private async void OnMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (_hoveredPosition.IsValid)
-            ViewModel.OnClick(_hoveredPosition);
+            await ViewModel.OnClick(_hoveredPosition);
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
