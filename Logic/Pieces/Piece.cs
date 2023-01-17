@@ -74,6 +74,8 @@ public abstract class Piece
         };
     }
 
+    public static PieceColor InvertColor(PieceColor color) => color == PieceColor.White ? PieceColor.Black : PieceColor.White;
+
     public abstract HashSet<Position> GetEmptyBoardMoves();
     public virtual HashSet<Position> GetEmptyBoardAttacks() => GetEmptyBoardMoves();
     protected abstract bool CanMoveInternal(Position positionToMoveTo);

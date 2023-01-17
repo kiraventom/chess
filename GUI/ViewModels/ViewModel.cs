@@ -1,10 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Common;
 using Logic;
 using Logic.Pieces;
 using GUI.Utils;
+using Logic.Pieces.Engine;
+using Microsoft.VisualBasic;
 
 namespace GUI.ViewModels;
 
@@ -16,6 +20,7 @@ public class ViewModel : BaseNotifier
 
     private Game _game;
     private Piece _selectedPiece;
+    private Engine _engine;
 
     public ICommand RestartCommand { get; }
 
@@ -35,6 +40,7 @@ public class ViewModel : BaseNotifier
     public void Init()
     {
         _game = new Game(GetPromotionPiece);
+        _engine = new Engine(_game);
         _pawnPromoter = new PawnPromoter(_changeTracker, _game.Board);
         GameLogReader.Clear();
         _selectedPiece = null;
@@ -73,34 +79,21 @@ public class ViewModel : BaseNotifier
 
     public async Task OnClick(Position position)
     {
-        if (!position.IsValid)
+        var isValidMove = TryGetMove(position, out var move);
+        if (!isValidMove)
             return;
 
-        if (_pawnPromoter.IsPromoting)
+        await MakeMove(move);
+
+        if (_game.GameState is Logic.GameState.WaitingForMove)
         {
-            _pawnPromoter.HandleClick(position);
-            return;
+            var engineMove = await _engine.GetMove();
+            await MakeMove(engineMove);
         }
+    }
 
-        if (_selectedPiece is null)
-        {
-            bool didSelect = TrySelectPiece(position);
-            if (didSelect)
-                _changeTracker.RegisterPiece(_selectedPiece, _game.Board);
-
-            return;
-        }
-
-        var selectedPiece = _selectedPiece;
-        _selectedPiece = null;
-
-        // deselect
-        _changeTracker.RegisterPiece(selectedPiece, _game.Board, false);
-
-        if (!Board.GetMoves(selectedPiece).Contains(position))
-            return;
-
-        var move = new Move(selectedPiece.Position, position);
+    private async Task MakeMove(Move move)
+    {
         await _game.MakeMove(move);
 
         RaisePropertyChanged(nameof(CurrentTurn));
@@ -110,11 +103,45 @@ public class ViewModel : BaseNotifier
         _changeTracker.RegisterField(_game.Board[move.To]);
 
         var lastTurn = _game.GameLog.Turns[^1];
-        if (lastTurn.LastMove.IsCastle)
-            foreach (var extraPosition in lastTurn.LastMove.Extra)
-                _changeTracker.RegisterField(_game.Board[extraPosition]);
+        foreach (var extraPosition in lastTurn.LastMove.Extra)
+            _changeTracker.RegisterField(_game.Board[extraPosition]);
 
         GameLogReader.AddOrUpdateTurn(lastTurn);
+    }
+
+    private bool TryGetMove(Position position, out Move move)
+    {
+        move = default;
+
+        if (!position.IsValid)
+            return false;
+
+        if (_pawnPromoter.IsPromoting)
+        {
+            _pawnPromoter.HandleClick(position);
+            return false;
+        }
+
+        if (_selectedPiece is null)
+        {
+            var didSelect = TrySelectPiece(position);
+            if (didSelect)
+                _changeTracker.RegisterPiece(_selectedPiece, _game.Board);
+
+            return false;
+        }
+
+        var selectedPiece = _selectedPiece;
+        _selectedPiece = null;
+
+        // deselect
+        _changeTracker.RegisterPiece(selectedPiece, _game.Board, false);
+
+        if (!Board.GetMoves(selectedPiece).Contains(position))
+            return false;
+
+        move = new Move(selectedPiece.Position, position);
+        return true;
     }
 
     private async Task<PromotionPiece> GetPromotionPiece(Pawn pawn)

@@ -1,5 +1,4 @@
 namespace Logic.Pieces;
-
 public class King : Piece, ICastlePiece
 {
     // Флаг нужен для того, чтобы при проверке длинной рокировки не перепроверять поле D два раза -- при проверке поля D и при проверке поля C
@@ -65,7 +64,10 @@ public class King : Piece, ICastlePiece
                 while (positionToStepThrough != positionToMoveTo)
                 {
                     if (!CanMove(positionToStepThrough))
+                    {
+                        _checkingForCastle = false;
                         return false;
+                    }
 
                     positionToStepThrough += offset;
                 }

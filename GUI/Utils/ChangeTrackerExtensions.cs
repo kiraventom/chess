@@ -45,7 +45,8 @@ public static class ChangeTrackerExtensions
 
         if (field.Position.Row == 1)
             layers.Add(new LabelLayer(field.Position, LabelType.Columns));
-        else if (field.Position.Column == 1)
+
+        if (field.Position.Column == 1)
             layers.Add(new LabelLayer(field.Position, LabelType.Rows));
 
         var change = new Change(layers);

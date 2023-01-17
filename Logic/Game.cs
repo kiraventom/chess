@@ -53,8 +53,8 @@ public class Game
         var takenPiece = Board[move.To].Piece;
         await Board.MovePiece(move);
 
-        CurrentTurn = CurrentTurn == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        GameState = UpdateState();
+        CurrentTurn = Piece.InvertColor(CurrentTurn);
+        GameState = GetState(Board, CurrentTurn);
 
         var movedPiece = Board[move.To].Piece;
         var isCastle = movedPiece is King && move.AbsHorizontalChange > 1;
@@ -113,18 +113,18 @@ public class Game
 
     internal static Task<PromotionPiece> DefaultPromotionCallback(Pawn pawn) => Task.FromResult(PromotionPiece.Queen);
 
-    private GameState UpdateState()
+    internal static GameState GetState(Board board, PieceColor currentTurn)
     {
-        var allyPieces = Board.Pieces.Values.Where(p => p.Color == CurrentTurn);
+        var allyPieces = board.Pieces.Values.Where(p => p.Color == currentTurn);
         bool anyPieceHasAnyMove = allyPieces.Any(p => Board.GetMoves(p).Any());
         if (anyPieceHasAnyMove)
             return GameState.WaitingForMove;
 
-        var king = CurrentTurn == PieceColor.White ? Board.WhiteKing : Board.BlackKing;
+        var king = currentTurn == PieceColor.White ? board.WhiteKing : board.BlackKing;
         if (!king.IsInCheck())
             return GameState.Stalemate;
 
-        return CurrentTurn == PieceColor.White ? GameState.BlackWin : GameState.WhiteWin;
+        return currentTurn == PieceColor.White ? GameState.BlackWin : GameState.WhiteWin;
     }
 
     private static void AddDefaultPieces(Board board)
