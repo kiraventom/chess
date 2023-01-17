@@ -16,13 +16,9 @@ public class Board
 
     internal Board()
     {
-        for (int row = 1; row <= 8; row++)
-        {
-            for (int col = 1; col <= 8; col++)
-            {
-                _fields[new Position(row, col)] = new Field(this, new Position(row, col));
-            }
-        }
+        for (var row = 1; row <= 8; row++)
+        for (var col = 1; col <= 8; col++)
+            _fields[new Position(row, col)] = new Field(this, new Position(row, col));
     }
 
     private Board(Board board) : this()
@@ -32,6 +28,18 @@ public class Board
             var newPiece = Piece.Clone(piece, _fields[field.Position]);
             AddPiece(newPiece);
         }
+    }
+
+    public static HashSet<Position> GetMoves(Piece piece)
+    {
+        var moves = piece.GetEmptyBoardMoves().Where(piece.CanMove);
+        var attacks = piece.GetEmptyBoardAttacks().Where(piece.CanTake);
+        return new HashSet<Position>(moves.Concat(attacks));
+    }
+
+    internal IEnumerable<Field> GetAttacked(Piece piece)
+    {
+        return piece.GetEmptyBoardAttacks().Where(piece.IsAttacking).Select(p => _fields[p]);
     }
 
     internal void AddPiece(Piece piece)
@@ -62,46 +70,17 @@ public class Board
         return copy;
     }
 
-    internal Board IfAdd(Piece newPiece)
-    {
-        var copy = new Board(this);
-        var pieceCopy = Piece.Clone(newPiece, copy[newPiece.Position]);
-        copy.AddPiece(pieceCopy);
-        return copy;
-    }
-
-    internal Board IfRemove(Piece oldPiece)
-    {
-        if (_fields[oldPiece.Position].Piece != oldPiece)
-            throw new InvalidOperationException();
-
-        var copy = new Board(this);
-        copy._pieces.Remove(copy[oldPiece.Position]);
-        return copy;
-    }
-
-    public static HashSet<Position> GetMoves(Piece piece)
-    {
-        var moves = piece.GetEmptyBoardMoves().Where(piece.CanMove);
-        var attacks = piece.GetEmptyBoardAttacks().Where(piece.CanTake);
-        return new HashSet<Position>(moves.Concat(attacks));
-    }
-
-    public IEnumerable<Field> GetAttacked(Piece piece)
-    {
-        return piece.GetEmptyBoardAttacks().Where(piece.IsAttacking).Select(p => _fields[p]);
-    }
-
     internal void MovePiece(Move move)
     {
         if (!IsValidMove(move))
             throw new InvalidOperationException();
 
-        _pieces.Remove(_fields[move.From], out var piece);
+        var piece = _pieces[_fields[move.From]];
+        _pieces.Remove(_fields[move.From]);
 
         var newField = _fields[move.To];
-        var eatenPiece = newField.Piece;
-        if (eatenPiece is not null)
+        var takenPiece = newField.Piece;
+        if (takenPiece is not null)
             _pieces.Remove(newField);
 
         _pieces.Add(newField, piece);
@@ -109,26 +88,18 @@ public class Board
 
         // TODO Pawn promotion
 
-        if (piece is King king)
-        {
-            king.DidMove = true;
+        if (piece is ICastlePiece castlePiece)
+            castlePiece.DidMove = true;
 
-            // castle
-            var colOffset = move.To.Column - move.From.Column;
-            if (Math.Abs(colOffset) > 1)
-            {
-                if (colOffset < 0)
-                    MovePiece(new Move($"A{king.Position.Row}", $"D{king.Position.Row}"));
-                else
-                    MovePiece(new Move($"H{king.Position.Row}", $"F{king.Position.Row}"));
-            }
-        }
-        else if (piece is Rook rook)
-            rook.DidMove = true;
+        if (piece is King king && move.AbsHorizontalChange > 1)
+            Castle(king.Position.Row, Game.GetCastleDirection(move));
     }
 
-    private static bool IsValidMove(Move move)
+    private void Castle(int row, CastleDirection direction)
     {
-        return move.From.IsValid && move.To.IsValid;
+        var rookMove = Game.GetRookCastleMove(direction, row);
+        MovePiece(rookMove);
     }
+
+    private static bool IsValidMove(Move move) => move.From.IsValid && move.To.IsValid;
 }

@@ -19,6 +19,12 @@ public readonly struct Move
     public Position From { get; }
     public Position To { get; }
 
+    public int HorizontalChange => To.Column - From.Column;
+    public int VerticalChange => To.Row - From.Row;
+
+    public int AbsHorizontalChange => Math.Abs(HorizontalChange);
+    public int AbsVerticalChange => Math.Abs(VerticalChange);
+
     public Move(Position from, Position to)
     {
         From = from;

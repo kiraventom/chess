@@ -1,6 +1,6 @@
 namespace Logic.Pieces;
 
-public class King : Piece
+public class King : Piece, ICastlePiece
 {
     // Флаг нужен для того, чтобы при проверке длинной рокировки не перепроверять поле D два раза -- при проверке поля D и при проверке поля C
     private bool _checkingForCastle;
@@ -54,17 +54,20 @@ public class King : Piece
         {
             _checkingForCastle = true;
 
-            var columnOffset = positionToMoveTo.Column - Position.Column;
-            if (Math.Abs(columnOffset) > 1)
+            var move = new Move(Position, positionToMoveTo);
+            if (move.AbsHorizontalChange > 1)
             {
-                var step = columnOffset > 0 ? 1 : -1;
-                var positionToStepThrough = Position + new Offset(0, step);
+                var castleDirection = Game.GetCastleDirection(move);
+                var step = castleDirection == CastleDirection.Short ? 1 : -1;
+                var offset = new Offset(0, step);
+                var positionToStepThrough = Position + offset;
+
                 while (positionToStepThrough != positionToMoveTo)
                 {
                     if (!CanMove(positionToStepThrough))
                         return false;
 
-                    positionToStepThrough += new Offset(0, step);
+                    positionToStepThrough += offset;
                 }
             }
 

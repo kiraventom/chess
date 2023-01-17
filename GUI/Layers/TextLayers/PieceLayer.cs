@@ -17,9 +17,6 @@ public class PieceLayer : TextLayer
 
     protected override void PaintInternal(SKCanvas canvas, float renderLeft, float renderTop, float renderRight, float renderBottom)
     {
-        // TODO MeasureText
-        // _whiteFieldPaint.MeasureText()
-
         var color = _pieceColor == PieceColor.White ? SKColors.White : SKColors.Black;
 
         var width = renderRight - renderLeft;

@@ -40,17 +40,17 @@ public class GameLogTurnReader : BaseNotifier
         return sb.ToString();
     }
 
-    private static StringBuilder GameLogMoveToString(GameLogMove turn)
+    private static StringBuilder GameLogMoveToString(GameLogMove move)
     {
         StringBuilder sb = new();
 
-        if (turn.IsCastle)
+        if (move.IsCastle)
         {
-            sb.Append(turn.Move.To.Column == 7 ? "0-0" : "0-0-0");
+            sb.Append(move.Move.To.Column == 7 ? "0-0" : "0-0-0");
         }
         else
         {
-            var pieceStr = turn.Piece switch
+            var pieceStr = move.Piece switch
             {
                 King => "K",
                 Queen => "Q",
@@ -62,15 +62,15 @@ public class GameLogTurnReader : BaseNotifier
 
             sb.Append(pieceStr);
 
-            if (turn.IsTake)
-                sb.Append(turn.Piece is Pawn ? turn.Move.From.ToString()[0] : 'x');
+            if (move.IsTake)
+                sb.Append(move.Piece is Pawn ? move.Move.From.ToString()[0] : 'x');
 
-            sb.Append(turn.Piece is Pawn && turn.IsTake ? turn.Move.To.ToString()[0] : turn.Move.To.ToString());
+            sb.Append(move.Piece is Pawn && move.IsTake ? move.Move.To.ToString()[0] : move.Move.To.ToString());
         }
 
-        if (turn.IsMate)
+        if (move.IsMate)
             sb.Append('#');
-        else if (turn.IsCheck)
+        else if (move.IsCheck)
             sb.Append('+');
 
         return sb;

@@ -4,7 +4,7 @@ using SkiaSharp;
 
 namespace GUI.Layers;
 
-public enum HighlightType {None, Selected, Move, Attack}
+public enum HighlightType { Selected, Move, Attack }
 
 public abstract class RectangleLayer : IChangeLayer
 {

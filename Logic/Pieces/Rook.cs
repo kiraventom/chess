@@ -1,6 +1,6 @@
 namespace Logic.Pieces;
 
-public class Rook : Piece
+public class Rook : Piece, ICastlePiece
 {
     public bool DidMove { get; set; }
 

@@ -6,6 +6,11 @@ public enum PieceColor
     Black
 }
 
+public interface ICastlePiece
+{
+    public bool DidMove { get; set; }
+}
+
 public abstract class Piece
 {
     public Position Position => Field.Position;
@@ -65,7 +70,7 @@ public abstract class Piece
             Rook => new Rook(newField, oldPiece.Color),
             Knight => new Knight(newField, oldPiece.Color),
             Pawn => new Pawn(newField, oldPiece.Color),
-            _ => throw new NotImplementedException()
+            _ => throw new InvalidOperationException()
         };
     }
 

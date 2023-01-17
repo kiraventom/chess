@@ -29,7 +29,6 @@ public class HighlightLayer : RectangleLayer
 
         var paint = Type switch
         {
-            HighlightType.None => throw new InvalidOperationException(),
             HighlightType.Selected => _selectionPaint,
             HighlightType.Move => _movesPaint,
             HighlightType.Attack => _attackedPaint,
