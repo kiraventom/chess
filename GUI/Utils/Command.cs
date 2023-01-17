@@ -1,6 +1,7 @@
+﻿using System;
 using System.Windows.Input;
 
-namespace Logic;
+namespace GUI.Utils;
 
 public class Command : ICommand
 {

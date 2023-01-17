@@ -3,36 +3,54 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:GUI"
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
-        xmlns:logic="clr-namespace:Logic;assembly=Logic"
+        xmlns:viewModels="clr-namespace:GUI.ViewModels"
+        xmlns:gameLogReader="clr-namespace:GUI.ViewModels.GameLogReader"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance {x:Type logic:Game}}"
-        Title="MainWindow" Height="700" Width="1000">
+        d:DataContext="{d:DesignInstance {x:Type viewModels:ViewModel}}"
+        Title="MainWindow"
+        Height="700"
+        Width="1000">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
-            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="300" />
         </Grid.ColumnDefinitions>
         <skia:SKElement
             Grid.Column="0"
             x:Name="MainView" />
-        <StackPanel
-            Grid.Column="1"
-            Orientation="Vertical">
+        <Grid
+            Margin="5, 0"
+            Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
             <Button
+                Grid.Row="0"
                 Content="Restart"
                 Command="{Binding RestartCommand}" />
-            <TextBlock Text="{Binding GameState}" />
-            <TextBlock Text="{Binding CurrentTurn}" />
+
+            <TextBlock
+                Grid.Row="1"
+                Text="{Binding GameState}" />
+
+            <TextBlock
+                Grid.Row="2"
+                Text="{Binding CurrentTurn}" />
+
             <ListBox
-                ItemsSource="{Binding GameLog.Log}">
+                Grid.Row="3"
+                ItemsSource="{Binding GameLogReader.Turns}">
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type logic:GameLogTurn}">
+                    <DataTemplate DataType="{x:Type gameLogReader:GameLogTurnReader}">
                         <TextBlock Text="{Binding AsString}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-        </StackPanel>
+        </Grid>
     </Grid>
 </Window>

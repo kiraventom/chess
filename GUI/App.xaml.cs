@@ -1,17 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
+using Common;
+using GUI.ViewModels;
+using Logic;
 
 namespace GUI
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
-    public partial class App : Application
+    public partial class App
     {
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            var changeTracker = new ChangeTracker();
+            var viewModel = new ViewModel(changeTracker);
+            var mainWindow = new MainWindow(changeTracker)
+            {
+                DataContext = viewModel
+            };
+
+            mainWindow.Show();
+        }
     }
 }
