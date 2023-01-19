@@ -1,10 +1,12 @@
-﻿using System.Diagnostics.SymbolStore;
+﻿using System.Collections.Concurrent;
 
 namespace Logic.Pieces.Engine;
 
 public class Engine
 {
     private readonly Game _game;
+
+    public EvaluatedMoveChain LastChain { get; private set; }
 
     public Engine(Game game)
     {
@@ -13,11 +15,12 @@ public class Engine
 
     public async Task<Move> GetMove()
     {
-        await Task.Delay(Random.Shared.Next(700, 1300));
-
         var colorToMove = _game.CurrentTurn;
-        var bestMove = Calculate(_game.Board, colorToMove);
-        return bestMove;
+        var bestChain =
+            await Task.Run(() => GetBestChain(3, _game.Board, colorToMove, new EvaluatedMoveChain()));
+
+        LastChain = bestChain;
+        return bestChain.Moves[0];
     }
 
     private static IEnumerable<Move> GetAllMoves(Board board, PieceColor colorToMove)
@@ -30,49 +33,37 @@ public class Engine
             select new Move(piece.Position, pos);
     }
 
-    private static Move Calculate(Board board, PieceColor colorToMove)
+    private static EvaluatedMoveChain GetBestChain(int depth, Board board, PieceColor color, EvaluatedMoveChain prevChain)
     {
-        var ourColor = colorToMove;
-        var enemyColor = Piece.InvertColor(ourColor);
+        if (depth == 0)
+            return prevChain;
 
-        var allOurMoves = GetAllMoves(board, ourColor);
-        var allOurChains = new List<EvaluatedMoveChain>();
-        foreach (var move in allOurMoves)
+        var otherColor = Piece.InvertColor(color);
+
+        // make all moves
+        var allChains = new ConcurrentBag<EvaluatedMoveChain>();
+        var allMoves = GetAllMoves(board, color);
+        Parallel.ForEach(allMoves, move =>
         {
-            var ourMoveChain = new EvaluatedMoveChain();
+            var ifMakeMove = board.IfMakeMove(move);
+            var evalAfterMove = Evaluate(ifMakeMove, otherColor);
+            var chain = prevChain.AddMove(move, evalAfterMove);
 
-            // our turn
-            var ifWeMakeTurn = board.IfMove(move);
-            var evalAfterOurTurn = Evaluate(ifWeMakeTurn, enemyColor);
-            ourMoveChain = ourMoveChain.AddMove(move, evalAfterOurTurn);
+            // get other color best move
+            chain = GetBestChain(depth - 1, ifMakeMove, otherColor, chain);
 
-            // enemy answer
-            var allEnemyChains = new List<EvaluatedMoveChain>();
-            var allEnemyAnswers = GetAllMoves(ifWeMakeTurn, enemyColor);
-            foreach (var enemyAnswer in allEnemyAnswers)
-            {
-                var ifEnemyAnswers = ifWeMakeTurn.IfMove(enemyAnswer);
-                var evalAfterEnemyAnswer = Evaluate(ifEnemyAnswers, ourColor);
-                var enemyAnswerChain = ourMoveChain.AddMove(move, evalAfterEnemyAnswer);
-                allEnemyChains.Add(enemyAnswerChain);
-            }
+            allChains.Add(chain);
+        });
 
-            // false if we have mate or stalemate
-            if (allEnemyChains.Any())
-            {
-                // we pick the best possible enemy answer
-                allEnemyChains.Sort((chain, otherChain) => chain.Evaluation.CompareTo(otherChain.Evaluation));
-                var enemyBestChain = enemyColor == PieceColor.Black ? allEnemyChains[0] : allEnemyChains[^1];
-                ourMoveChain = enemyBestChain;
-            }
+        // no moves - mate or stalemate
+        if (!allChains.Any())
+            return prevChain;
 
-            allOurChains.Add(ourMoveChain);
-        }
-
-        // we pick the best move
-        allOurChains.Sort((chain, otherChain) => chain.Evaluation.CompareTo(otherChain.Evaluation));
-        var ourBestChain = ourColor == PieceColor.Black ? allOurChains[0] : allOurChains[^1];
-        return ourBestChain.Moves[0];
+        // pick the best
+        var allChainsList = allChains.ToList();
+        allChainsList.Sort((chain, otherChain) => chain.Evaluation.CompareTo(otherChain.Evaluation));
+        var bestChain = color == PieceColor.Black ? allChainsList[0] : allChainsList[^1];
+        return bestChain;
     }
 
     private static int Evaluate(Board board, PieceColor color)
