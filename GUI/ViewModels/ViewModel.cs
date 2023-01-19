@@ -15,12 +15,14 @@ namespace GUI.ViewModels;
 public class ViewModel : BaseNotifier
 {
     private readonly ChangeTracker _changeTracker;
+    private const PieceColor PlayerColor = PieceColor.White;
 
     private PawnPromoter _pawnPromoter;
 
     private Game _game;
     private Piece _selectedPiece;
     private Engine _engine;
+    private bool _isEngineBusy;
 
     public ICommand RestartCommand { get; }
 
@@ -29,11 +31,18 @@ public class ViewModel : BaseNotifier
     public string CurrentTurn => _game.CurrentTurn.ToString();
     public string GameState => _game.GameState.ToString();
 
+    public int EngineDepth { get; set; } = 3;
+
+    public bool IsEngineBusy
+    {
+        get => _isEngineBusy;
+        private set => SetAndRaise(ref _isEngineBusy, value);
+    }
+
     public ViewModel(ChangeTracker changeTracker)
     {
         GameLogReader = new GameLogReader.GameLogReader();
         _changeTracker = changeTracker;
-
         RestartCommand = new Command(Init);
     }
 
@@ -87,8 +96,12 @@ public class ViewModel : BaseNotifier
 
         if (_game.GameState is Logic.GameState.WaitingForMove)
         {
-            var engineMove = await _engine.GetMove();
+            IsEngineBusy = true;
+
+            var engineMove = await _engine.GetMove(EngineDepth);
             await MakeMove(engineMove);
+
+            IsEngineBusy = false;
         }
     }
 
@@ -162,7 +175,7 @@ public class ViewModel : BaseNotifier
 
         var piece = field.Piece;
 
-        if (piece.Color == _game.CurrentTurn)
+        if (piece.Color == PlayerColor)
             _selectedPiece = piece;
 
         return _selectedPiece is not null;

@@ -6,11 +6,17 @@
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         xmlns:viewModels="clr-namespace:GUI.ViewModels"
         xmlns:gameLogReader="clr-namespace:GUI.ViewModels.GameLogReader"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance {x:Type viewModels:ViewModel}}"
         Title="MainWindow"
         Height="700"
         Width="1000">
+    <Window.Resources>
+        <xctk:InverseBoolConverter x:Key="InverseBoolConverter" />
+        <BooleanToVisibilityConverter x:Key="VisibilityConverter" />
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
@@ -25,25 +31,43 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
                 <RowDefinition />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Button
-                Grid.Row="0"
-                Content="Restart"
-                Command="{Binding RestartCommand}" />
+            <DockPanel
+                Grid.Row="0">
+                <Label
+                    DockPanel.Dock="Left"
+                    Content="Engine depth" />
+                <xctk:IntegerUpDown
+                    DockPanel.Dock="Left"
+                    Margin="3, 0"
+                    Minimum="1"
+                    Maximum="15"
+                    IsEnabled="{Binding IsEngineBusy, Converter={StaticResource InverseBoolConverter}}"
+                    Value="{Binding EngineDepth}" />
+                <Button
+                    DockPanel.Dock="Right"
+                    Content="Restart"
+                    IsEnabled="{Binding IsEngineBusy, Converter={StaticResource InverseBoolConverter}}"
+                    Command="{Binding RestartCommand}" />
+            </DockPanel>
 
-            <TextBlock
-                Grid.Row="1"
-                Text="{Binding GameState}" />
+            <StackPanel
+                Orientation="Horizontal"
+                Grid.Row="1">
 
-            <TextBlock
-                Grid.Row="2"
-                Text="{Binding CurrentTurn}" />
+                <TextBlock
+                    Margin="0,0,5,0"
+                    Text="{Binding CurrentTurn}" />
+
+                <TextBlock
+                    Text="{Binding GameState}" />
+            </StackPanel>
 
             <ListBox
-                Grid.Row="3"
+                Grid.Row="2"
                 ItemsSource="{Binding GameLogReader.Turns}">
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type gameLogReader:GameLogTurnReader}">
@@ -51,6 +75,13 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+
+            <ProgressBar
+                Grid.Row="3"
+                Height="20"
+                Visibility="{Binding IsEngineBusy, Converter={StaticResource VisibilityConverter}}"
+                IsIndeterminate="True">
+            </ProgressBar>
         </Grid>
     </Grid>
 </Window>

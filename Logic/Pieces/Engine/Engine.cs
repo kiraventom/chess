@@ -13,11 +13,11 @@ public class Engine
         _game = game;
     }
 
-    public async Task<Move> GetMove()
+    public async Task<Move> GetMove(int depth)
     {
         var colorToMove = _game.CurrentTurn;
         var bestChain =
-            await Task.Run(() => GetBestChain(3, _game.Board, colorToMove, new EvaluatedMoveChain()));
+            await Task.Run(() => GetBestChain(depth, _game.Board, colorToMove, new EvaluatedMoveChain()));
 
         LastChain = bestChain;
         return bestChain.Moves[0];
