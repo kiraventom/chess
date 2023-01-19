@@ -32,7 +32,7 @@ public abstract class Piece
         if (!canMove)
             return false;
 
-        var ifMove = Field.Board.IfMove(new Move(Position, newPosition));
+        var ifMove = Field.Board.IfMakeMove(new Move(Position, newPosition));
         var allyKing = Color == PieceColor.White ? ifMove.WhiteKing : ifMove.BlackKing;
         return !allyKing.IsInCheck();
     }
@@ -47,7 +47,7 @@ public abstract class Piece
         if (!canEat)
             return false;
 
-        var ifMove = Field.Board.IfMove(new Move(Position, newPosition));
+        var ifMove = Field.Board.IfMakeMove(new Move(Position, newPosition));
         var allyKing = Color == PieceColor.White ? ifMove.WhiteKing : ifMove.BlackKing;
         return !allyKing.IsInCheck();
     }

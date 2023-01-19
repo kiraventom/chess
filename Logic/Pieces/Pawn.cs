@@ -36,6 +36,17 @@ public class Pawn : Piece
     }
 
     protected override bool CanTakeInternal(Position positionToEatAt) => true;
-    protected override bool CanMoveInternal(Position positionToMoveTo) => true;
+
+    protected override bool CanMoveInternal(Position positionToMoveTo)
+    {
+        // check for two rows move
+        var move = new Move(Position, positionToMoveTo);
+        if (move.AbsVerticalChange != 2)
+            return true;
+
+        var positionToGoThrough = Position + new Offset(move.VerticalChange / 2, 0);
+        return !Field.Board[positionToGoThrough].IsOccupied;
+    }
+
     protected override bool IsAttackingInternal(Position attackedPosition) => true;
 }

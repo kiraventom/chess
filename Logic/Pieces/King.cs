@@ -57,6 +57,14 @@ public class King : Piece, ICastlePiece
             if (move.AbsHorizontalChange > 1)
             {
                 var castleDirection = Game.GetCastleDirection(move);
+                var rookMove = Game.GetRookCastleMove(castleDirection, move.From.Row);
+                var rook = Field.Board[rookMove.From].Piece;
+                if (!rook.CanMove(rookMove.To))
+                {
+                    _checkingForCastle = false;
+                    return false;
+                }
+
                 var step = castleDirection == CastleDirection.Short ? 1 : -1;
                 var offset = new Offset(0, step);
                 var positionToStepThrough = Position + offset;

@@ -69,7 +69,7 @@ public class Board
         }
     }
 
-    internal Board IfMove(Move move)
+    internal Board IfMakeMove(Move move)
     {
         var copy = new Board(this);
         copy.MovePiece(move).ConfigureAwait(false).GetAwaiter().GetResult();
